@@ -1,0 +1,20 @@
+Traceback (most recent call last):
+  File "/opt/viper/modules/peepdf/JSAnalysis.py", line 75, in analyseJS
+    code = jsbeautifier.beautify(code)
+  File "/opt/viper/modules/peepdf/jsbeautifier/__init__.py", line 93, in beautify
+    return b.beautify(string, opts)
+  File "/opt/viper/modules/peepdf/jsbeautifier/__init__.py", line 210, in beautify
+    self.input = self.unpack(s, opts.eval_code)
+  File "/opt/viper/modules/peepdf/jsbeautifier/__init__.py", line 245, in unpack
+    import jsbeautifier.unpackers as unpackers
+ImportError: No module named jsbeautifier.unpackers
+Traceback (most recent call last):
+  File "/opt/viper/modules/peepdf/JSAnalysis.py", line 75, in analyseJS
+    code = jsbeautifier.beautify(code)
+  File "/opt/viper/modules/peepdf/jsbeautifier/__init__.py", line 93, in beautify
+    return b.beautify(string, opts)
+  File "/opt/viper/modules/peepdf/jsbeautifier/__init__.py", line 210, in beautify
+    self.input = self.unpack(s, opts.eval_code)
+  File "/opt/viper/modules/peepdf/jsbeautifier/__init__.py", line 245, in unpack
+    import jsbeautifier.unpackers as unpackers
+ImportError: No module named jsbeautifier.unpackers

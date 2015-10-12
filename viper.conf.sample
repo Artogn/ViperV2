@@ -1,0 +1,84 @@
+# This file is part of Viper - https://github.com/botherder/viper
+# See the file 'LICENSE' for copying permission.
+
+##
+# Core
+##
+
+[modules]
+store_output = True
+
+[paths]
+# root path for project storage
+# If blank default is vipers cwd
+root_path = 
+
+[database]
+# Configure the database connection type example shown below
+# Examples
+# sqlite:///foo.db
+# postgresql://foo:bar@localhost:5432/mydatabase     -   sudo apt-get install python-psycopg2
+# mysql://foo:bar@localhost/mydatabase     -   sudo apt-get install python-mysqldb
+# If blank, default is a SQLite in root_path or project path
+
+conn_string = 
+
+
+[ticketing]
+enabled = False
+
+[api]
+enabled = True
+api_access_key_enabled = True
+# If api_access_key is enabled you will need to set an Authorization header field in your
+# HTTP Request equal to the api_access_key.
+# Using Python requests: r = requests.get('http://localhost:8000/api/test', headers={'Authorization': 'api_access_key'})
+
+#ToDo Move this to the User Database
+api_access_key = 801fe6c28526e72589981c923d518232
+
+[autorun]
+enabled = True
+
+# Verbose True will print the output of each command. 
+# False will tell you a command has been run but not display the output
+verbose = False
+
+# Enter a comma separated list of command lines, As you would enter them in the CLI. You can use ; to chain commands.
+# Commands are run in sequence and the output of MODULES is stored if store_output is set to True.
+commands = yara scan -t, fuzzy, pe compiletime
+
+
+##
+# Modules
+##
+
+[virustotal]
+virustotal_url = https://www.virustotal.com/vtapi/v2/file/report
+virustotal_url_submit = https://www.virustotal.com/vtapi/v2/file/scan
+virustotal_url_download = https://www.virustotal.com/intelligence/download
+virustotal_url_comment = https://www.virustotal.com/vtapi/v2/comments/put
+virustotal_key =
+
+[cuckoo]
+cuckoo_api = http://localhost:8090
+cuckoo_web = http://localhost:9191
+
+[reports]
+malwr_login = https://malwr.com/account/login/
+malwr_user =
+malwr_pass =
+malwr_search = https://malwr.com/analysis/search/
+malwr_prefix = https://malwr.com
+
+anubis_login = https://anubis.iseclab.org/?action=login
+anubis_user = 
+anubis_pass = 
+anubis_search = https://anubis.iseclab.org/?action=hashquery
+anubis_prefix = https://anubis.iseclab.org/
+
+[misp]
+misp_url =
+misp_key =
+
+
