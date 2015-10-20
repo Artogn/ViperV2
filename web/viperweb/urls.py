@@ -31,6 +31,9 @@ urlpatterns = patterns('',
     # Upload File
     url(r'^upload/$', views.upload_files, name='upload_files'),
 
+    # Upload from URL
+    url(r'urldownload/', views.url_download, name='url_download'),
+
     # Config File
     url(r'^config/$', views.config_file, name='config_file'),
 

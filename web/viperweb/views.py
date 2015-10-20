@@ -28,6 +28,7 @@ from viper.core.session import __sessions__
 from viper.core.plugins import __modules__
 from viper.core.project import __project__
 from viper.common.objects import File
+from viper.common import network
 from viper.core.storage import store_sample, get_sample_path
 from viper.core.database import Database
 from viper.core.ui.commands import Commands
@@ -99,14 +100,16 @@ def upload_temp():
 
 
 def open_db(project):
-    # Check for valid project
     project_list = __project__.list()
-    print project
-    if any(d.get('name', None) == project for d in project_list):
+    # Check for valid project
+    if project == 'default':
+        __project__.open(project)
+    elif any(d.get('name', None) == project for d in project_list):
         # Open Project
         __project__.open(project)
-        # Init DB
-        return Database()
+    else:
+        return False
+    return Database()
 
 
 def project_list():
@@ -227,6 +230,7 @@ def module_cmdline(cmd_line, file_hash):
 def add_file(file_path, tags, parent):
     obj = File(file_path)
     new_path = store_sample(obj)
+    print new_path
     success = True
     if new_path:
         # Add file to the database.
@@ -262,23 +266,25 @@ def login_page(request):
                     login(request, user)
                     return redirect('/')
                 else:
-                    error_line = "This account has been disabled"
-                    return redirect('/')
+                    error = "This account has been disabled"
+                    return main_page(request, project='default', error=error)
             else:
-                return redirect('/')
+                error = "Unable to login to the Web Panel. Check your UserName and Password"
+                return main_page(request, project='default', error=error)
     except:
-        error_line = "Unable to login to the Web Panel"
-        return redirect('/')
+        error = "Unable to login to the Web Panel"
+        return main_page(request, project='default', error=error)
 
 
 # Logout Page
 def logout_page(request):
     logout(request)
-    return redirect('/')
+    success = "You have been logged out"
+    return main_page(request, project='default', success=success)
 
 
 # Main Page
-def main_page(request, project='default'):
+def main_page(request, project='default', error=None, success=None):
     db = open_db(project)
 
     # set pagination details
@@ -307,12 +313,15 @@ def main_page(request, project='default'):
                                           'samples': [first_sample, last_sample],
                                           'error_line': False,
                                           'project': project,
-                                          'projects': __project__.list()
+                                          'projects': __project__.list(),
+                                          'error': error,
+                                          'success':success
                                           })
 
 
 # Add New File
 # Uses Context Manager to Remove Temp files
+@login_required
 def upload_files(request):
     tags = request.POST['tag_list']
     uploads = request.FILES.getlist('file')
@@ -327,7 +336,7 @@ def upload_files(request):
     project = request.POST['project']
     if not project:
         project = 'default'
-    db = open_db(project)
+    open_db(project)
 
     # Write temp file to disk
     with upload_temp() as temp_dir:
@@ -358,7 +367,7 @@ def upload_files(request):
                                 print stored
                 except Exception as e:
                     error = "Error with zipfile - {0}".format(e)
-                    print error
+                    return main_page(request, project=project, error=error)
 
             # GZip Files
             elif compression == 'gz':
@@ -371,6 +380,7 @@ def upload_files(request):
                     stored = add_file(file_path[:-3], tags, parent)
                 except Exception as e:
                     error = "Error with gzipfile - {0}".format(e)
+                    return main_page(request, project=project, error=error)
 
             # BZip2 Files
             elif compression == 'bz2':
@@ -382,13 +392,15 @@ def upload_files(request):
                         df.write(decompress)
                     stored = add_file(file_path[:-3], tags, parent)
                 except Exception as e:
-                    return template('error.tpl', error="Error with bzip2file - {0}".format(e))
+                    error = "Error with bzip2file - {0}".format(e)
+                    return main_page(request, project=project, error=error)
 
             # Tar Files (any, including tar.gz tar.bz2)
             elif compression == 'tar':
                 try:
                     if not tarfile.is_tarfile(file_path):
-                        return template('error.tpl', error="This is not a tar file")
+                        error = "This is not a tar file"
+                        return redirect("/project/{0}".format(project))
                     with tarfile.open(file_path, 'r:*') as tarf:
                         tarf.extractall(temp_dir)
                     for root, dirs, files in walk(temp_dir, topdown=False):
@@ -397,10 +409,62 @@ def upload_files(request):
                                 stored = add_file(os.path.join(root, name), tags, parent)
                 except Exception as e:
                     error = "Error with tarfile - {0}".format(e)
+                    return main_page(request, project=project, error=error)
 
                     # ToDo 7zip needs a sys call till i find a nice library
 
     return redirect("/project/{0}".format(project))
+
+
+#add file from url
+def url_download(request):
+    url = request.POST['url']
+    tags = request.POST['tag_list']
+    tags = "url,"+tags
+    project = request.POST['project']
+    if 'tor' in request.POST:
+        upload = network.download(url,tor=True)
+    else:
+        upload = network.download(url,tor=False)
+    if upload is None:
+        error = "server can't download from URL"
+        return main_page(request, project=project, error=error)
+
+    # Set Project
+    project = request.POST['project']
+    if not project:
+        project = 'default'
+    open_db(project)
+
+    tf = tempfile.NamedTemporaryFile()
+    tf.write(upload)
+    if tf == None:
+        error = "server can't download from URL"
+        return main_page(request, project=project, error=error)
+    tf.flush()
+
+    sha_256 = add_file(tf.name, tags, None)
+    if sha_256:
+        return redirect("/project/{0}".format(project))
+    else:
+        error = "Unable to Store The File, already in database"
+        return main_page(request, project=project, error=error)
+
+
+# VirusTotal Download
+def vt_download(request):
+    vt_hash = request.POST['vt_hash']
+    project = request.POST['project']
+    tags = request.POST['tag_list']
+    cmd_line = 'virustotal -d {0}; store; tags -a {1}'.format(vt_hash, tags)
+
+    module_results = module_cmdline(cmd_line, False)
+
+    if 'Stored' in module_results:
+        return redirect("/project/{0}".format(project))
+    else:
+        error = "Unable to download file {0}".format(module_results)
+        return main_page(request, project=project, error=error)
 
 
 # File View
@@ -496,6 +560,7 @@ def run_module(request):
 
 
 # Hex Viewer
+@login_required
 def hex_view(request):
     # get post data
     file_hash = request.POST['file_hash']
@@ -530,7 +595,7 @@ def hex_view(request):
     # return the data
     return HttpResponse(html_string)
 
-
+@login_required
 def yara_rules(request):
     rule_path = os.path.join(VIPER_ROOT, 'data/yara')
     rule_list = os.listdir(rule_path)
@@ -597,6 +662,7 @@ def yara_rules(request):
 
 
 # Create Project
+@login_required
 def create_project(request):
     project_name = request.POST['project'].replace(' ', '_')
     __project__.open(project_name)
@@ -604,6 +670,7 @@ def create_project(request):
 
 
 # View Config File
+@login_required
 def config_file(request):
     sections = cfg.__dict__.keys()
     config_values = {}
@@ -612,6 +679,7 @@ def config_file(request):
     return render(request, 'config.html', {'config_values': config_values})
 
 # Search
+@login_required
 def search_file(request):
     key = request.POST['key']
     value = request.POST['term'].lower()
@@ -638,11 +706,15 @@ def search_file(request):
     # Search each Project in the list
     for project in projects:
         db = open_db(project)
-        #get results
+        # get results
         proj_results = []
         rows = db.find(key=key, value=value)
         for row in rows:
             proj_results.append([row.name, row.sha256])
-        results.append({'name':project, 'res':proj_results})
+        results.append({'name': project, 'res': proj_results})
     # Return some things
     return render(request, 'search.html', {'results': results})
+
+# Cli Commands
+def cli_viewer():
+    return render(request, 'cli.html', {'results': results})

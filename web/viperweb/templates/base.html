@@ -121,13 +121,19 @@
 <p style="margin-bottom: 25px;"><img src="/static/images/viper.png" width="250" height="60" alt="Viper Malware"/></p>
     <!-- End Header  -->
     
-        {% if message %}
-        <div class="container">
-        <div class="alert alert-success alert-dismissible">
-            <p class="text-center">"{{message}}"</p>
-        </div>
-        </div>
-    {% endif %}
+{% if error %}
+<div class="alert alert-danger text-center">
+  <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
+  <strong>Error!</strong> {{ error }}.
+</div>
+{% endif %}
+
+{% if success %}
+<div class="alert alert-success text-center">
+  <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
+  <strong>Success!</strong> {{ success }}.
+</div>
+{% endif %}
     
     {% if user.is_authenticated %}
     {% block content %}{% endblock %}

@@ -41,7 +41,7 @@
                 <label for="tag_list"> | Tags</label>
                 <input type="text" class="form-control" name="tag_list" id="tag_list" placeholder="List of Tags">
             </div>
-            
+
             <input type="hidden" name="project" value="{{project}}" />
             <button type="submit" class="btn btn-default">Upload</button>
             {% csrf_token %}
@@ -55,7 +55,7 @@
         <h3 class="panel-title">URL Download</h3>
     </div>
     <div class="panel-body">
-        <form class="form-inline" role="form" action="/URLDownload/" enctype="multipart/form-data" method="post" name="submit">
+        <form class="form-inline" role="form" action="/urldownload/" enctype="multipart/form-data" method="post" name="submit">
             <div class="form-group">
                 <label class="sr-only" for="URL">URL</label>
                 <input type="search" class="form-control" name="url" id="url" placeholder="URL">
@@ -71,6 +71,7 @@
             </div>
 
             <button type="submit" class="btn btn-default">Run</button>
+            <input type="hidden" name="project" value="{{project}}" />
             {% csrf_token %}
         </form>
     </div>

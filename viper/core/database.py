@@ -357,6 +357,7 @@ class Database:
                                         ssdeep=obj.ssdeep,
                                         name=name,
                                         parent=parent_sha)
+                print malware_entry
                 session.add(malware_entry)
                 session.commit()
             except IntegrityError:

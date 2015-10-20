@@ -34,5 +34,5 @@ if cfg.api.enabled:
     print "Enable API"
     urlpatterns += ( url(r'^api/', include('viperapi.urls')),)
 if cfg.ticketing.enabled:
-    print "Enable API"
+    print "Enable Ticketing"
     urlpatterns += ( url(r'^ticket/', include('vipertickets.urls')),)
